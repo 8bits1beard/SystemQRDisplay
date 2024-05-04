@@ -1,3 +1,15 @@
+"""
+Script Name: SystemInfoQRApp.py
+Description: This script generates a GUI application that displays system information,
+             generates QR codes for URLs, and manages system-related tasks such as fetching
+             Windows registry values and update history. It ensures all dependencies are
+             installed before executing GUI related operations.
+
+Dependencies: tkinter, PIL (Pillow), qrcode, wmi, pywin32, datetime, socket, winreg
+Usage: Run this script directly with Python 3. Ensure you have administrative rights if required
+       by any of the system information fetching operations.
+"""
+
 import subprocess
 import sys
 
@@ -5,6 +17,10 @@ def install_and_import(package, import_name=None):
     """
     Install and import a package using pip. Specify an import_name if the import
     syntax differs from the package name.
+    
+    Args:
+        package (str): The package name to install.
+        import_name (str): The name used to import the package in scripts.
     """
     if import_name is None:
         import_name = package
@@ -32,7 +48,7 @@ packages = [
 for package, import_name in packages:
     install_and_import(package, import_name)
 
-# Now safe to import other modules
+# Safe imports after ensuring dependencies are present
 import socket
 import tkinter as tk
 from tkinter import ttk
@@ -44,8 +60,6 @@ import wmi
 import win32com.client
 import winreg
 
-
-
 # Constants for QR Code generation
 QR_CONFIG = {
     'version': 7,
@@ -55,7 +69,16 @@ QR_CONFIG = {
 }
 
 def get_registry_value(path, name):
-    """Retrieves a value from the Windows registry."""
+    """
+    Retrieves a value from the Windows registry.
+    
+    Args:
+        path (str): Registry path.
+        name (str): Name of the registry value.
+    
+    Returns:
+        str: The value from the registry or 'UNKNOWN' if not found.
+    """
     try:
         key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, path)
         value, regtype = winreg.QueryValueEx(key, name)
@@ -70,7 +93,12 @@ def get_registry_value(path, name):
         return None
 
 def get_latest_update():
-    """Retrieves the title of the latest Cumulative Update from the Windows Update history."""
+    """
+    Retrieves the title of the latest Cumulative Update from the Windows Update history.
+    
+    Returns:
+        str: The title of the latest update or 'No Updates Found'.
+    """
     try:
         wua = win32com.client.Dispatch("Microsoft.Update.Session")
         searcher = wua.CreateUpdateSearcher()
@@ -87,6 +115,9 @@ def get_latest_update():
 def fetch_system_info():
     """
     Retrieves various system information such as hostname, IP address, and OS details.
+    
+    Returns:
+        dict: A dictionary containing key system information.
     """
     c = wmi.WMI()
     system = c.Win32_ComputerSystem()[0]
@@ -100,7 +131,6 @@ def fetch_system_info():
     role = get_registry_value(r"SOFTWARE\Workstation\Build", "Role")
     latest_update = get_latest_update()
 
-    # Calculate disk size and memory in GB and append ' GB' suffix
     disk_size_gb = f"{round(int(disk.Size) / (1024**3))} GB"
     memory_gb = f"{round(int(system.TotalPhysicalMemory) / (1024**3))} GB"
 
@@ -119,36 +149,46 @@ def fetch_system_info():
         'Last Reboot': last_reboot.strftime("%m/%d/%Y %H:%M")
     }
 
-
-
 def generate_qr_code(url):
-    """Creates a QR code image for a given URL."""
+    """
+    Creates a QR code image for a given URL.
+    
+    Args:
+        url (str): URL to generate a QR code for.
+    
+    Returns:
+        Image: A PIL image object of the QR code.
+    """
     qr = qrcode.QRCode(**QR_CONFIG)
     qr.add_data(url)
     qr.make(fit=True)
     return qr.make_image(fill='black', back_color='white').resize((200, 200), Image.Resampling.LANCZOS)
 
 def create_gui(root, android_qr_img, ios_qr_img, system_info):
-    """Generates a GUI window displaying Android and iOS QR codes along with system information using image badges."""
+    """
+    Generates a GUI window displaying Android and iOS QR codes along with system information using image badges.
+    
+    Args:
+        root (tk.Tk): The root window.
+        android_qr_img (ImageTk.PhotoImage): Image for Android QR code.
+        ios_qr_img (ImageTk.PhotoImage): Image for iOS QR code.
+        system_info (dict): Dictionary containing system information.
+    """
     root.title("Download the Me@Walmart App for Android or iOS")
 
-    # Define fonts
     header_font = Font(root, ("Helvetica", 12, "bold"))
     body_font = Font(root, ("Helvetica", 11, "normal"))
 
-    # Load badge images
     android_badge_image = Image.open("google_play_badge.png")
     ios_badge_image = Image.open("app_store_badge.png")
     android_badge_photo = ImageTk.PhotoImage(android_badge_image)
     ios_badge_photo = ImageTk.PhotoImage(ios_badge_image)
 
-    # Use a main frame to group elements
     main_frame = ttk.Frame(root, padding="10 10 10 10")
     main_frame.grid(row=0, column=0, sticky=(tk.N, tk.W, tk.E, tk.S))
     root.columnconfigure(0, weight=1)
     root.rowconfigure(0, weight=1)
 
-    # Frame for Android QR and badge
     android_frame = ttk.Frame(main_frame)
     android_frame.grid(row=0, column=0, sticky='ew', padx=150)
     android_badge_label = ttk.Label(android_frame, image=android_badge_photo)
@@ -156,7 +196,6 @@ def create_gui(root, android_qr_img, ios_qr_img, system_info):
     android_label = ttk.Label(android_frame, image=android_qr_img)
     android_label.pack(side='top', fill='x')
 
-    # Frame for iOS QR and badge
     ios_frame = ttk.Frame(main_frame)
     ios_frame.grid(row=0, column=1, sticky='ew', padx=(20, 150))
     ios_badge_label = ttk.Label(ios_frame, image=ios_badge_photo)
@@ -164,17 +203,6 @@ def create_gui(root, android_qr_img, ios_qr_img, system_info):
     ios_label = ttk.Label(ios_frame, image=ios_qr_img)
     ios_label.pack(side='top', fill='x')
 
-    # Ensure that both columns in the main frame distribute space evenly
-    main_frame.columnconfigure(0, weight=1)
-    main_frame.columnconfigure(1, weight=1)
-
-    # Keep a reference to the images to avoid garbage collection
-    android_label.image = android_qr_img
-    ios_label.image = ios_qr_img
-    android_badge_label.image = android_badge_photo
-    ios_badge_label.image = ios_badge_photo
-
-    # Display system info
     info_frame = ttk.Frame(main_frame)
     info_frame.grid(row=1, column=0, columnspan=2, sticky='ew')
     row = 0
@@ -183,16 +211,12 @@ def create_gui(root, android_qr_img, ios_qr_img, system_info):
         ttk.Label(info_frame, text=value, font=body_font).grid(row=row, column=1, sticky='w', padx=5, pady=2)
         row += 1
 
-# Create and configure a custom style
     style = ttk.Style()
     style.configure('Red.TButton', font=('Helvetica', 10, 'bold'), foreground='red', background='white')
 
-# Customize the close button with new style and reduced size
     close_button = ttk.Button(info_frame, text="CLOSE THIS WINDOW", command=root.destroy, style='Red.TButton')
     close_button.grid(row=row, column=0, columnspan=2, pady=10, sticky='nsew', padx=10)
 
-
-    # Center the window on the screen
     root.update_idletasks()
     width = root.winfo_width()
     height = root.winfo_height()
