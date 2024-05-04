@@ -8,6 +8,7 @@ Description: This script generates a GUI application that displays system inform
 Dependencies: tkinter, PIL (Pillow), qrcode, wmi, pywin32, datetime, socket, winreg
 Usage: Run this script directly with Python 3. Ensure you have administrative rights if required
        by any of the system information fetching operations.
+Author: Joshua Walderbach
 """
 
 import subprocess
