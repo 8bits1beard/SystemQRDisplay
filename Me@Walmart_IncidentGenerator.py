@@ -16,6 +16,7 @@ def install(package):
     except subprocess.CalledProcessError as e:
         print(f"Failed to install {package}: {e}")
 
+
 # Dependency Checks and Installation
 try:
     import wmi
@@ -42,13 +43,14 @@ def fetch_fqdn_details():
     """Fetch the fully qualified domain name and extract useful parts."""
     try:
         fqdn = socket.getfqdn()
-        parts = fqdn.split('.')
+        parts = fqdn.split(".")
         if len(parts) >= 4:
-            return parts[1], '.'.join(parts[2:-1])
+            return parts[1], ".".join(parts[2:-1])
         return "Unknown", "Unknown"
     except Exception as e:
         print(f"Error retrieving FQDN details: {e}")
         return "Error", "Error"
+
 
 # Get WMI information of the system
 def get_wmi_info():
@@ -64,15 +66,18 @@ def get_wmi_info():
         print(f"Error accessing WMI data: {e}")
         return None
 
+
 # Compile comprehensive system information
 def get_system_info():
     """Compile system information into a dictionary."""
     system, os_info, bios, disk = get_wmi_info()
     if system and os_info and bios and disk:
         store_number, domain = fetch_fqdn_details()
-        last_reboot = datetime.strptime(os_info.LastBootUpTime.split('.')[0], "%Y%m%d%H%M%S")
+        last_reboot = datetime.strptime(
+            os_info.LastBootUpTime.split(".")[0], "%Y%m%d%H%M%S"
+        )
         formatted_last_reboot = last_reboot.strftime("%m/%d/%Y %H:%M")
-        
+
         return {
             "Machine Name": socket.gethostname(),
             "Store Number": store_number,
@@ -84,10 +89,11 @@ def get_system_info():
             "Disk Size": f"{int(disk.Size) / (1024**3):.2f} GB",
             "RAM Total": f"{int(system.TotalPhysicalMemory) / (1024**3):.2f} GB",
             "Windows OS Version": os_info.Caption,
-            "Last Reboot": formatted_last_reboot
+            "Last Reboot": formatted_last_reboot,
         }
     else:
         return {}
+
 
 # Generate QR code from a URL
 def generate_qr_code(url):
@@ -101,10 +107,13 @@ def generate_qr_code(url):
         )
         qr.add_data(url)
         qr.make(fit=True)
-        return qr.make_image(fill='black', back_color='white').resize((200, 200), Image.Resampling.LANCZOS)
+        return qr.make_image(fill="black", back_color="white").resize(
+            (200, 200), Image.Resampling.LANCZOS
+        )
     except Exception as e:
         print(f"Error generating QR code: {e}")
         return None
+
 
 # Load image from a file path
 def load_image(path):
@@ -119,6 +128,7 @@ def load_image(path):
         print(f"Error loading image from {path}: {e}")
         return None
 
+
 # Main application window setup
 def show_window(android_qr, ios_qr, system_info):
     """Setup and display the main application window with all components."""
@@ -126,7 +136,7 @@ def show_window(android_qr, ios_qr, system_info):
     root.title("Download the Me@Walmart App for Android or iOS")
 
     try:
-        root.iconbitmap('icon.ico')
+        root.iconbitmap("icon.ico")
     except Exception as e:
         print(f"Error setting icon: {e}")
 
@@ -154,14 +164,19 @@ def show_window(android_qr, ios_qr, system_info):
 
     row = 3
     for key, value in system_info.items():
-        ttk.Label(root, text=f"{key}:", font=("Helvetica", 10, "bold")).grid(row=row, column=0, sticky=tk.E)
-        ttk.Label(root, text=value, font=("Helvetica", 10)).grid(row=row, column=1, sticky=tk.W)
+        ttk.Label(root, text=f"{key}:", font=("Helvetica", 10, "bold")).grid(
+            row=row, column=0, sticky=tk.E
+        )
+        ttk.Label(root, text=value, font=("Helvetica", 10)).grid(
+            row=row, column=1, sticky=tk.W
+        )
         row += 1
 
     close_button = ttk.Button(root, text="Close", command=root.destroy)
     close_button.grid(row=row, column=0, columnspan=2, pady=20)
 
     root.mainloop()
+
 
 if __name__ == "__main__":
     android_url = "https://play.google.com/store/apps/details?id=com.walmart.squiggly&utm_campaign=WinEng_2025TicketReduction&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1"
